@@ -73,7 +73,13 @@ public class SecurityUtils {
     }
 
     private static List<SimpleGrantedAuthority> mapRolesToGrantedAuthorities(Collection<String> roles) {
-        return roles.stream().filter(role -> role.startsWith("ROLE_")).map(SimpleGrantedAuthority::new).toList();
+        if (roles == null) {
+            return Collections.emptyList(); // Повертає порожній список, якщо roles == null
+        }
+        return roles.stream()
+                .filter(role -> role.startsWith("ROLE_"))
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
     }
 
     public static boolean hasCurrentUserAnyOfAuthorities(String... authorities) {
