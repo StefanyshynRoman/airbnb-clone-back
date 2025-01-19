@@ -60,7 +60,7 @@ public class LandlordResource {
                 .stream()
                 .map(mapMultipartFileToPictureDTO())
                 .toList();
-
+        System.out.println("createeee");
         SaveListingDTO saveListingDTO = objectMapper.readValue(saveListingDTOString, SaveListingDTO.class);
         saveListingDTO.setPictures(pictures);
 

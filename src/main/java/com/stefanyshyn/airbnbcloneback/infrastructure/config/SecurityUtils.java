@@ -8,6 +8,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,7 +30,7 @@ public class SecurityUtils {
         Object rolesObject = claims.get(CLAIMS_NAMESPACE);
 
         if (rolesObject instanceof Collection<?> roles) {
-            System.out.println("Roles found: " + roles);
+            System.out.println("Roles found: " + roles+ LocalDateTime.now());
 
             return roles.stream()
                     .filter(role -> role instanceof String) // Перевірка, що це String
