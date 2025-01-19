@@ -15,7 +15,6 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 import java.util.HashSet;
 import java.util.Set;
-
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfiguration {
@@ -24,6 +23,7 @@ public class SecurityConfiguration {
     public SecurityFilterChain configure(HttpSecurity http) throws Exception {
         CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
         requestHandler.setCsrfRequestAttributeName(null);
+        System.out.println("Configuring Security Filter Chain...");
         http.authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.GET, "api/tenant-listing/get-all-by-category").permitAll()
                         .requestMatchers(HttpMethod.GET, "api/tenant-listing/get-one").permitAll()
@@ -37,6 +37,7 @@ public class SecurityConfiguration {
                 .oauth2Login(Customizer.withDefaults())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .oauth2Client(Customizer.withDefaults());
+        System.out.println("Security Filter Chain configured successfully.");
 
         return http.build();
     }
@@ -48,10 +49,12 @@ public class SecurityConfiguration {
 
             authorities.forEach(grantedAuthority -> {
                 if (grantedAuthority instanceof OidcUserAuthority oidcUserAuthority) {
+                    System.out.println("OIDC User Claims: " + oidcUserAuthority.getUserInfo().getClaims());
                     grantedAuthorities
                             .addAll(SecurityUtils.extractAuthorityFromClaims(oidcUserAuthority.getUserInfo().getClaims()));
                 }
             });
+            System.out.println("Granted Authorities: " + grantedAuthorities);
             return grantedAuthorities;
         };
     }

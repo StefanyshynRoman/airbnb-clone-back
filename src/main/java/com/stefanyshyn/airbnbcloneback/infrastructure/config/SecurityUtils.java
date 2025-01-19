@@ -17,8 +17,48 @@ public class SecurityUtils {
     public static final String ROLE_TENANT = "ROLE_TENANT";
     public static final String ROLE_LANDLORD = "ROLE_LANDLORD";
 
-    public static final String CLAIMS_NAMESPACE = "https://www.stefanyshyn.com/roles";
+    public static final String CLAIMS_NAMESPACE = "http://stefanyshyn.com/roles";
 
+    /**
+     * Витягує GrantedAuthority з claims.
+     */
+    public static Collection<GrantedAuthority> extractAuthorityFromClaims(Map<String, Object> claims) {
+        System.out.println("Extracting authorities from claims: " + claims);
+
+        Object rolesObject = claims.get(CLAIMS_NAMESPACE);
+
+        if (rolesObject instanceof Collection<?> roles) {
+            System.out.println("Roles found: " + roles);
+
+            return roles.stream()
+                    .filter(role -> role instanceof String) // Перевірка, що це String
+                    .map(role -> new SimpleGrantedAuthority((String) role))
+                    .collect(Collectors.toSet()); // Використання Set для уникнення дублікатів
+        }
+
+        System.out.println("No roles found in claims or invalid type. Roles object: " + rolesObject);
+        return Set.of(); // Повертаємо порожній набір, якщо ролі відсутні або тип некоректний
+    }
+
+    /**
+     * Мапить ролі на GrantedAuthority.
+     */
+    public static Collection<GrantedAuthority> mapRolesToGrantedAuthorities(Collection<String> roles) {
+        if (roles == null || roles.isEmpty()) {
+            System.out.println("No roles provided, returning empty authority list.");
+            return Set.of();
+        }
+
+        System.out.println("Mapping roles to authorities: " + roles);
+
+        return roles.stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Створює користувача на основі атрибутів OAuth2.
+     */
     public static User mapOauth2AttributesToUser(Map<String, Object> attributes) {
         User user = new User();
         String sub = String.valueOf(attributes.get("sub"));
@@ -61,27 +101,13 @@ public class SecurityUtils {
                     }).collect(Collectors.toSet());
             user.setAuthorities(authorities);
         }
+
         return user;
     }
 
-    public static List<SimpleGrantedAuthority> extractAuthorityFromClaims(Map<String, Object> claims) {
-        return mapRolesToGrantedAuthorities(getRolesFromClaims(claims));
-    }
-
-    private static Collection<String> getRolesFromClaims(Map<String, Object> claims) {
-        return (List<String>) claims.get(CLAIMS_NAMESPACE);
-    }
-
-    private static List<SimpleGrantedAuthority> mapRolesToGrantedAuthorities(Collection<String> roles) {
-        if (roles == null) {
-            return Collections.emptyList(); // Повертає порожній список, якщо roles == null
-        }
-        return roles.stream()
-                .filter(role -> role.startsWith("ROLE_"))
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
-    }
-
+    /**
+     * Перевіряє, чи поточний користувач має хоча б одну з указаних авторизацій.
+     */
     public static boolean hasCurrentUserAnyOfAuthorities(String... authorities) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return (authentication != null && getAuthorities(authentication)
@@ -89,9 +115,9 @@ public class SecurityUtils {
     }
 
     private static Stream<String> getAuthorities(Authentication authentication) {
-        Collection<? extends GrantedAuthority> authorities = authentication
-                instanceof JwtAuthenticationToken jwtAuthenticationToken ?
-                extractAuthorityFromClaims(jwtAuthenticationToken.getToken().getClaims()) : authentication.getAuthorities();
+        Collection<? extends GrantedAuthority> authorities = authentication instanceof JwtAuthenticationToken jwtAuthenticationToken
+                ? extractAuthorityFromClaims(jwtAuthenticationToken.getToken().getClaims())
+                : authentication.getAuthorities();
         return authorities.stream().map(GrantedAuthority::getAuthority);
     }
 }
